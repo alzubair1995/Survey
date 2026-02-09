@@ -64,26 +64,26 @@ def export_excel():
     ws.title = "Survey Responses"
 
     title = f"Survey Report ({date_from} to {date_to})"
-    ws.merge_cells("A1:L1")
+    ws.merge_cells("A1:L12")
     ws["A1"] = title
     ws["A1"].font = Font(bold=True, size=14)
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
 
     headers = [
-        "ID",
-        "اسم الطالب",
-        "الجنس",
-        "المرحلة الدراسية",
-        "الرضا عن التعلم الإلكتروني",
-        "هل يساعدك على فهم المادة؟",
-        "الجهاز المستخدم",
-        "جودة الانترنت",
-        "سهولة المنصة",
-        "التفاعل مع المدرس",
-        "تفضيل الدراسة",
-        "الاستمرار بالتعلم الإلكتروني",
-        "التاريخ",
-    ]
+    "ID",
+    "الجنس",
+    "المرحلة الدراسية",
+    "الرضا عن التعلم الإلكتروني",
+    "هل يساعدك على فهم المادة؟",
+    "الجهاز المستخدم",
+    "جودة الانترنت",
+    "سهولة المنصة",
+    "التفاعل مع المدرس",
+    "تفضيل الدراسة",
+    "الاستمرار بالتعلم الإلكتروني",
+    "التاريخ",
+]
+
     ws.append(headers)
 
     header_fill = PatternFill("solid", fgColor="EEF2FF")
@@ -99,27 +99,28 @@ def export_excel():
 
     for r in items:
         ws.append([
-            r.id,
-            r.student_name,
-            r.gender,
-            r.education_stage,
-            r.satisfaction,
-            r.understanding_help,
-            r.device,
-            r.internet_quality,
-            r.platform_ease,
-            r.teacher_interaction,
-            r.study_preference,
-            r.continue_elearning,
-            r.created_at.strftime("%Y-%m-%d %H:%M"),
-        ])
+        r.id,
+        r.gender,
+        r.education_stage,
+        r.satisfaction,
+        r.understanding_help,
+        r.device,
+        r.internet_quality,
+        r.platform_ease,
+        r.teacher_interaction,
+        r.study_preference,
+        r.continue_elearning,
+        r.created_at.strftime("%Y-%m-%d %H:%M"),
+    ])
+
 
     for row in ws.iter_rows(min_row=3, max_row=ws.max_row, min_col=1, max_col=len(headers)):
         for cell in row:
             cell.alignment = Alignment(vertical="top", wrap_text=True)
             cell.border = border
 
-    widths = [6, 18, 10, 14, 20, 20, 14, 14, 14, 16, 14, 18, 18]
+    widths = [6, 10, 14, 20, 20, 14, 14, 14, 16, 14, 18, 18]
+
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
 

@@ -1,52 +1,119 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}استبيان التعلم الإلكتروني{% endblock %}</title>
 
+  <!-- Tajawal -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
+    :root { color-scheme: light; }
     body { font-family: "Tajawal", sans-serif; }
     .glass { background: rgba(255,255,255,.75); backdrop-filter: blur(10px); }
     .fade-in { animation: fadeIn .35s ease-out both; }
-    @keyframes fadeIn { from {opacity:.0; transform: translateY(10px);} to {opacity:1; transform: translateY(0);} }
+    @keyframes fadeIn { from {opacity:0; transform: translateY(10px);} to {opacity:1; transform: translateY(0);} }
     .floaty { animation: floaty 4s ease-in-out infinite; }
     @keyframes floaty { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .tap { -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-800">
 
-<header class="sticky top-0 z-50 border-b border-white/50 bg-white/60 backdrop-blur">
-  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-3">
+<!-- Top glow background (subtle) -->
+<div class="pointer-events-none fixed inset-0 -z-10">
+  <div class="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-indigo-300/30 blur-3xl"></div>
+  <div class="absolute top-20 -right-24 w-72 h-72 rounded-full bg-sky-300/25 blur-3xl"></div>
+</div>
+
+<header class="sticky top-0 z-50 border-b border-white/60 bg-white/65 backdrop-blur">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+
+    <!-- Brand -->
+    <a href="{{ url_for('main.survey') }}" class="tap flex items-center gap-3 group">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white grid place-items-center shadow floaty">
         <i class="fa-solid fa-square-poll-vertical"></i>
       </div>
-      <div>
-        <div class="font-extrabold leading-tight">استبيان التعلم الإلكتروني</div>
-        <div class="text-xs text-slate-500">Survey System</div>
+      <div class="leading-tight">
+        <div class="font-extrabold group-hover:text-indigo-700 transition">استبيان التعلم الإلكتروني</div>
+        <div class="text-[11px] text-slate-500">Survey System</div>
       </div>
-    </div>
+    </a>
 
-    <nav class="flex items-center gap-2">
-      <a href="{{ url_for('main.survey') }}" class="px-3 py-2 rounded-xl hover:bg-slate-100 transition">
-        <i class="fa-solid fa-pen-to-square ml-1"></i> الاستبيان
+    <!-- Desktop Nav -->
+    <nav class="hidden md:flex items-center gap-2">
+      <a href="{{ url_for('main.survey') }}"
+         class="tap px-3 py-2 rounded-xl hover:bg-slate-100 transition flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+        <span>الاستبيان</span>
       </a>
-      <a href="{{ url_for('main.about') }}" class="px-3 py-2 rounded-xl hover:bg-slate-100 transition">
-        <i class="fa-solid fa-circle-info ml-1"></i> حول المطور
+
+      <a href="{{ url_for('main.about') }}"
+         class="tap px-3 py-2 rounded-xl hover:bg-slate-100 transition flex items-center gap-2">
+        <i class="fa-solid fa-circle-info text-blue-700"></i>
+        <span>حول المطور</span>
       </a>
-      <a href="{{ url_for('auth.login') }}" class="px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition shadow">
-        <i class="fa-solid fa-lock ml-1"></i> Admin
+
+      <a href="{{ url_for('auth.login') }}"
+         class="tap px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition shadow flex items-center gap-2">
+        <i class="fa-solid fa-lock"></i>
+        <span>Admin</span>
       </a>
     </nav>
+
+    <!-- Mobile Menu Button -->
+    <button id="menuBtn"
+            class="tap md:hidden w-10 h-10 rounded-xl bg-white/70 border border-white/60 grid place-items-center hover:bg-white transition shadow-sm"
+            aria-label="فتح القائمة"
+            aria-controls="mobileMenu"
+            aria-expanded="false">
+      <i id="menuIcon" class="fa-solid fa-bars"></i>
+    </button>
+
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="md:hidden hidden border-t border-white/60 bg-white/75 backdrop-blur">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-2">
+
+      <a href="{{ url_for('main.survey') }}"
+         class="tap px-3 py-3 rounded-2xl hover:bg-slate-100 transition flex items-center justify-between">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+          <span class="font-bold">الاستبيان</span>
+        </span>
+        <i class="fa-solid fa-chevron-left text-slate-400"></i>
+      </a>
+
+      <a href="{{ url_for('main.about') }}"
+         class="tap px-3 py-3 rounded-2xl hover:bg-slate-100 transition flex items-center justify-between">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-circle-info text-blue-700"></i>
+          <span class="font-bold">حول المطور</span>
+        </span>
+        <i class="fa-solid fa-chevron-left text-slate-400"></i>
+      </a>
+
+      <a href="{{ url_for('auth.login') }}"
+         class="tap px-3 py-3 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition shadow flex items-center justify-between">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-lock"></i>
+          <span class="font-bold">Admin</span>
+        </span>
+        <i class="fa-solid fa-chevron-left text-white/70"></i>
+      </a>
+
+    </div>
   </div>
 </header>
 
@@ -56,14 +123,50 @@
 
 <footer class="mt-10 pb-10">
   <div class="max-w-5xl mx-auto px-4 text-center text-sm text-slate-500">
-    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/70 border border-white/60">
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/70 border border-white/70 shadow-sm">
       <i class="fa-regular fa-copyright"></i>
       <span>المشروع لصالح: علي مزهر لهمود</span>
     </div>
   </div>
 </footer>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Mobile menu toggle
+  const btn = document.getElementById("menuBtn");
+  const menu = document.getElementById("mobileMenu");
+  const icon = document.getElementById("menuIcon");
+
+  function closeMenu() {
+    if (!menu) return;
+    menu.classList.add("hidden");
+    btn?.setAttribute("aria-expanded", "false");
+    if (icon) icon.className = "fa-solid fa-bars";
+  }
+
+  if (btn && menu) {
+    btn.addEventListener("click", () => {
+      const isHidden = menu.classList.contains("hidden");
+      menu.classList.toggle("hidden");
+      btn.setAttribute("aria-expanded", String(isHidden));
+      if (icon) icon.className = isHidden ? "fa-solid fa-xmark" : "fa-solid fa-bars";
+    });
+
+    // close when clicking outside
+    document.addEventListener("click", (e) => {
+      const target = e.target;
+      if (!menu.contains(target) && !btn.contains(target)) closeMenu();
+    });
+
+    // close on ESC
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeMenu();
+    });
+  }
+</script>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>

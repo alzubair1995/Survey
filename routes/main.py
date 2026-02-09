@@ -7,10 +7,7 @@ main_bp = Blueprint("main", __name__)
 @main_bp.route("/", methods=["GET", "POST"])
 def survey():
     if request.method == "POST":
-        student_name = (request.form.get("student_name") or "").strip()
-
         payload = SurveyResponse(
-            student_name=student_name,
             gender=request.form.get("gender"),
             education_stage=request.form.get("education_stage"),
             satisfaction=request.form.get("satisfaction"),
@@ -22,11 +19,6 @@ def survey():
             study_preference=request.form.get("study_preference"),
             continue_elearning=request.form.get("continue_elearning"),
         )
-
-        # تحقق بسيط
-        if not student_name:
-            flash("يرجى كتابة الاسم.")
-            return redirect(url_for("main.survey"))
 
         db.session.add(payload)
         db.session.commit()

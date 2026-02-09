@@ -4,8 +4,6 @@ from extensions import db
 class SurveyResponse(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
-    student_name = db.Column(db.String(160), nullable=False)
-
     gender = db.Column(db.String(30), nullable=False)
     education_stage = db.Column(db.String(50), nullable=False)
 
