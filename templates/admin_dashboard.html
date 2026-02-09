@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}لوحة الأدمن{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+  <div>
+    <h2 class="text-2xl font-extrabold">
+      <i class="fa-solid fa-chart-line ml-2 text-indigo-600"></i> لوحة الأدمن
+    </h2>
+    <p class="text-sm text-slate-500">إحصائيات الاستبيان + تصدير Excel</p>
+  </div>
+
+  <div class="flex gap-2">
+    <a href="{{ url_for('auth.logout') }}" class="px-4 py-2 rounded-2xl bg-red-600 text-white hover:bg-red-700 transition shadow">
+      <i class="fa-solid fa-right-from-bracket ml-1"></i> خروج
+    </a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <div class="glass border border-white/70 rounded-3xl p-4 shadow">
+    <div class="text-slate-500 text-sm">إجمالي المشاركات</div>
+    <div class="text-3xl font-extrabold mt-1">{{ total }}</div>
+  </div>
+</div>
+
+<div class="glass border border-white/70 rounded-3xl p-5 shadow mb-6">
+  <div class="font-extrabold mb-3">
+    <i class="fa-solid fa-file-excel ml-2 text-emerald-600"></i> تصدير Excel بين تاريخين
+  </div>
+  <form method="GET" action="{{ url_for('admin.export_excel') }}" class="flex flex-col md:flex-row gap-2 items-center">
+    <input type="date" name="from" required class="border border-slate-200 bg-white/70 p-2 rounded-2xl w-full md:w-auto">
+    <input type="date" name="to" required class="border border-slate-200 bg-white/70 p-2 rounded-2xl w-full md:w-auto">
+    <button class="px-4 py-2 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 transition shadow font-bold w-full md:w-auto">
+      <i class="fa-solid fa-download ml-1"></i> تنزيل Excel
+    </button>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-chart-pie ml-2 text-indigo-600"></i> الجنس</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
+      <canvas id="genderChart" height="140"></canvas>
+    </div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-chart-column ml-2 text-blue-700"></i> المرحلة الدراسية</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
+      <canvas id="stageChart" height="140"></canvas>
+    </div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-face-smile ml-2 text-emerald-700"></i> الرضا عن التعلم الإلكتروني</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
+      <canvas id="satChart" height="160"></canvas>
+    </div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-rotate ml-2 text-slate-700"></i> الاستمرار بالتعلم الإلكتروني</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
+      <canvas id="contChart" height="160"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="glass border border-white/70 rounded-3xl p-5 shadow">
+  <div class="font-extrabold mb-3"><i class="fa-solid fa-clock-rotate-left ml-2"></i> آخر المشاركات</div>
+  <div class="space-y-2">
+    {% for r in latest %}
+      <div class="bg-white/70 border border-white/70 rounded-2xl p-3">
+        <div class="font-extrabold">#{{ r.id }} • {{ r.student_name }}</div>
+        <div class="text-sm text-slate-600">الجنس: {{ r.gender }} | المرحلة: {{ r.education_stage }}</div>
+        <div class="text-xs text-slate-500">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+      </div>
+    {% endfor %}
+    {% if not latest %}
+      <div class="text-slate-500">لا توجد مشاركات بعد.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function chartFromDict(canvasId, dictObj, type="pie") {
+    const labels = Object.keys(dictObj);
+    const values = Object.values(dictObj);
+    const ctx = document.getElementById(canvasId);
+    new Chart(ctx, {
+      type,
+      data: {
+        labels: labels.length ? labels : ["لا توجد بيانات"],
+        datasets: [{ data: values.length ? values : [0] }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "bottom" } },
+        scales: type === "bar" ? { y: { beginAtZero: true } } : {}
+      }
+    });
+  }
+
+  chartFromDict("genderChart", {{ gender_counts|tojson }}, "pie");
+  chartFromDict("stageChart", {{ stage_counts|tojson }}, "bar");
+  chartFromDict("satChart", {{ satisfaction_counts|tojson }}, "bar");
+  chartFromDict("contChart", {{ continue_counts|tojson }}, "pie");
+</script>
+{% endblock %}

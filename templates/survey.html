@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}الاستبيان{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h2 class="text-2xl font-extrabold">
+    <i class="fa-solid fa-pen-to-square ml-2 text-indigo-600"></i> استبيان التعلم الإلكتروني
+  </h2>
+  <p class="text-sm text-slate-500">يرجى تعبئة الاستبيان بدقة، البيانات تُستخدم لأغراض بحثية/أكاديمية.</p>
+</div>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-2xl mb-4">
+      <i class="fa-solid fa-triangle-exclamation ml-1"></i> {{ messages[0] }}
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% if success %}
+  <div class="glass border border-white/70 rounded-3xl p-6 shadow">
+    <div class="text-2xl font-extrabold text-green-700">
+      <i class="fa-solid fa-circle-check ml-2"></i> تم إرسال الاستبيان بنجاح
+    </div>
+    <p class="text-slate-600 mt-2">شكرًا لمشاركتك 🌟</p>
+    <a href="{{ url_for('main.survey') }}" class="inline-block mt-4 px-4 py-2 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition shadow">
+      تعبئة استبيان آخر
+    </a>
+  </div>
+{% else %}
+  <form method="POST" class="glass border border-white/70 rounded-3xl p-6 shadow space-y-4">
+
+    <div>
+      <label class="block mb-1 text-sm font-bold text-slate-700">اسم الطالب *</label>
+      <input name="student_name" required
+             class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-200"
+             placeholder="اكتب اسمك الثلاثي...">
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block mb-1 text-sm font-bold">الجنس *</label>
+        <select name="gender" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>ذكر</option>
+          <option>انثى</option>
+        </select>
+      </div>
+      <div>
+        <label class="block mb-1 text-sm font-bold">المرحلة الدراسية *</label>
+        <select name="education_stage" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>اعدادية</option>
+          <option>دبلوم</option>
+          <option>بكالوريوس</option>
+          <option>ماجستير</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-bold">ما مدى رضاك عن التعلم الإلكتروني؟ *</label>
+      <select name="satisfaction" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+        <option value="">-- اختر --</option>
+        <option>راض جدا</option>
+        <option>راض</option>
+        <option>محايد</option>
+        <option>غير راض</option>
+        <option>غير راض جدا</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-bold">هل يساعدك التعلم الإلكتروني على فهم المادة؟ *</label>
+      <select name="understanding_help" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+        <option value="">-- اختر --</option>
+        <option>دائما</option>
+        <option>غالبا</option>
+        <option>احيانا</option>
+        <option>نادرا</option>
+        <option>ابدا</option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block mb-1 text-sm font-bold">ما الجهاز الذي تستخدمه للدراسة؟ *</label>
+        <select name="device" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>هاتف محمول</option>
+          <option>حاسوب</option>
+          <option>جهاز لوحي</option>
+        </select>
+      </div>
+      <div>
+        <label class="block mb-1 text-sm font-bold">جودة الإنترنت أثناء الدراسة؟ *</label>
+        <select name="internet_quality" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>ممتازة</option>
+          <option>جيدة</option>
+          <option>متوسطة</option>
+          <option>ضعيفة</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block mb-1 text-sm font-bold">سهولة استخدام منصة التعليم؟ *</label>
+        <select name="platform_ease" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>سهلة جدا</option>
+          <option>سهلة</option>
+          <option>متوسطة</option>
+          <option>صعبة</option>
+        </select>
+      </div>
+      <div>
+        <label class="block mb-1 text-sm font-bold">مستوى التفاعل مع المدرس في التعليم؟ *</label>
+        <select name="teacher_interaction" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>مرتفع جدا</option>
+          <option>مرتفع</option>
+          <option>متوسط</option>
+          <option>منخفض</option>
+          <option>منخفض جدا</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block mb-1 text-sm font-bold">تفضيل طريقة الدراسة؟ *</label>
+        <select name="study_preference" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>الكتروني</option>
+          <option>حضوري</option>
+          <option>مختلط</option>
+        </select>
+      </div>
+      <div>
+        <label class="block mb-1 text-sm font-bold">هل ترغب بالاستمرار في استخدام التعلم الإلكتروني؟ *</label>
+        <select name="continue_elearning" required class="w-full border border-slate-200 bg-white/70 p-3 rounded-2xl">
+          <option value="">-- اختر --</option>
+          <option>نعم</option>
+          <option>الى حد ما</option>
+          <option>لا</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="w-full bg-indigo-600 text-white py-3 rounded-2xl hover:bg-indigo-700 transition shadow font-bold">
+      <i class="fa-solid fa-paper-plane ml-1"></i> إرسال الاستبيان
+    </button>
+
+  </form>
+{% endif %}
+{% endblock %}
