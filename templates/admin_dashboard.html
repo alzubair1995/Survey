@@ -68,6 +68,12 @@
     <button class="px-4 py-2 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 transition shadow font-bold w-full md:w-auto">
       <i class="fa-solid fa-download ml-1"></i> تنزيل Excel
     </button>
+
+    <button formaction="{{ url_for('admin.export_pdf') }}" formmethod="get"
+        class="px-4 py-2 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition shadow font-bold w-full md:w-auto">
+  <i class="fa-solid fa-file-pdf ml-1"></i> تقرير PDF
+</button>
+
   </form>
 </div>
 

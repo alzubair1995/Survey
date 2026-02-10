@@ -11,6 +11,28 @@ from models.response import SurveyResponse
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
+
+from io import BytesIO
+from pathlib import Path
+
+from flask import send_file, request, current_app
+from sqlalchemy import func
+
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+
+import arabic_reshaper
+from bidi.algorithm import get_display
+from flask import redirect, url_for
+
+
+
+
+
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 @admin_bp.route("/dashboard")
@@ -205,4 +227,134 @@ def export_excel():
         as_attachment=True,
         download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+def _ar(text: str) -> str:
+    if text is None:
+        text = ""
+    return get_display(arabic_reshaper.reshape(str(text)))
+@admin_bp.route("/export/pdf")
+@login_required
+@roles_required("admin")
+def export_pdf():
+    date_from = request.args.get("from", "")
+    date_to = request.args.get("to", "")
+
+    if not date_from or not date_to:
+        # يرجع المستخدم للداش بورد بدون كسر
+        return redirect(url_for("admin.dashboard"))
+
+    # نفس منطق Excel (تاريخ بغداد)
+    baghdad_date = func.date(func.datetime(SurveyResponse.created_at, "+3 hours"))
+
+    items = (
+        SurveyResponse.query
+        .filter(baghdad_date >= date_from, baghdad_date <= date_to)
+        .order_by(SurveyResponse.created_at.asc())
+        .all()
+    )
+
+    def count_by(col):
+        return dict(
+            db.session.query(col, func.count(SurveyResponse.id))
+            .filter(baghdad_date >= date_from, baghdad_date <= date_to)
+            .group_by(col)
+            .all()
+        )
+
+    # إحصائيات
+    gender = count_by(SurveyResponse.gender)
+    stage = count_by(SurveyResponse.education_stage)
+    satisfaction = count_by(SurveyResponse.satisfaction)
+    understanding = count_by(SurveyResponse.understanding_help)
+    device = count_by(SurveyResponse.device)
+    internet = count_by(SurveyResponse.internet_quality)
+    platform = count_by(SurveyResponse.platform_ease)
+    interaction = count_by(SurveyResponse.teacher_interaction)
+    preference = count_by(SurveyResponse.study_preference)
+    cont = count_by(SurveyResponse.continue_elearning)
+
+    # ✅ Register Tajawal font (embedded in PDF)
+    font_path = Path(current_app.root_path) / "static" / "fonts" / "Tajawal-Regular.ttf"
+    if font_path.exists():
+        pdfmetrics.registerFont(TTFont("Tajawal", str(font_path)))
+        base_font = "Tajawal"
+    else:
+        base_font = "Helvetica"  # fallback
+
+    bio = BytesIO()
+    c = canvas.Canvas(bio, pagesize=A4)
+    w, h = A4
+
+    def draw_title(txt, y):
+        c.setFont(base_font, 18)
+        c.setFillColor(colors.HexColor("#0F172A"))
+        c.drawRightString(w - 2*cm, y, _ar(txt))
+
+    def draw_sub(txt, y):
+        c.setFont(base_font, 12)
+        c.setFillColor(colors.HexColor("#475569"))
+        c.drawRightString(w - 2*cm, y, _ar(txt))
+
+    def draw_section(txt, y):
+        c.setFont(base_font, 14)
+        c.setFillColor(colors.HexColor("#0F172A"))
+        c.drawRightString(w - 2*cm, y, _ar(txt))
+        c.setStrokeColor(colors.HexColor("#CBD5E1"))
+        c.line(2*cm, y-6, w-2*cm, y-6)
+
+    def draw_kv(dic, y, max_rows=10):
+        c.setFont(base_font, 12)
+        c.setFillColor(colors.HexColor("#0F172A"))
+        items_sorted = sorted(dic.items(), key=lambda x: x[1], reverse=True)
+        if not items_sorted:
+            c.drawRightString(w - 2*cm, y, _ar("لا توجد بيانات"))
+            return y - 18
+
+        for i, (k, v) in enumerate(items_sorted[:max_rows]):
+            c.drawRightString(w - 2*cm, y - i*16, _ar(f"{k} : {v}"))
+        return y - min(len(items_sorted), max_rows)*16 - 8
+
+    # Header
+    draw_title("تقرير إحصائيات الاستبيان", h - 2.2*cm)
+    draw_sub(f"الفترة: {date_from}  إلى  {date_to}", h - 3.1*cm)
+    draw_sub(f"عدد المشاركات: {len(items)}", h - 3.8*cm)
+
+    y = h - 5.0*cm
+
+    # Sections (multiple pages)
+    blocks = [
+        ("الجنس", gender),
+        ("المرحلة الدراسية", stage),
+        ("الرضا عن التعلم الإلكتروني", satisfaction),
+        ("هل يساعد على فهم المادة؟", understanding),
+        ("الجهاز المستخدم", device),
+        ("جودة الإنترنت", internet),
+        ("سهولة المنصة", platform),
+        ("التفاعل مع المدرس", interaction),
+        ("تفضيل طريقة الدراسة", preference),
+        ("الاستمرار بالتعلم الإلكتروني", cont),
+    ]
+
+    for label, data in blocks:
+        if y < 5.2*cm:
+            c.showPage()
+            y = h - 3*cm
+
+        draw_section(label, y)
+        y = draw_kv(data, y - 22)
+
+    # Footer
+    c.setFont(base_font, 10)
+    c.setFillColor(colors.HexColor("#64748B"))
+    c.drawString(2*cm, 1.6*cm, _ar("تم إنشاء هذا التقرير تلقائيًا من نظام الاستبيان."))
+
+    c.save()
+    bio.seek(0)
+
+    filename = f"survey_report_{date_from}_to_{date_to}.pdf"
+    return send_file(
+        bio,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/pdf"
     )
