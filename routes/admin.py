@@ -19,14 +19,74 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 def dashboard():
     total = db.session.query(func.count(SurveyResponse.id)).scalar() or 0
 
-    # توزيع بسيط
-    gender_counts = dict(db.session.query(SurveyResponse.gender, func.count(SurveyResponse.id)).group_by(SurveyResponse.gender).all())
-    stage_counts = dict(db.session.query(SurveyResponse.education_stage, func.count(SurveyResponse.id)).group_by(SurveyResponse.education_stage).all())
+    # Distributions (counts)
+    gender_counts = dict(
+        db.session.query(SurveyResponse.gender, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.gender).all()
+    )
+    stage_counts = dict(
+        db.session.query(SurveyResponse.education_stage, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.education_stage).all()
+    )
+    satisfaction_counts = dict(
+        db.session.query(SurveyResponse.satisfaction, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.satisfaction).all()
+    )
+    understanding_counts = dict(
+        db.session.query(SurveyResponse.understanding_help, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.understanding_help).all()
+    )
+    device_counts = dict(
+        db.session.query(SurveyResponse.device, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.device).all()
+    )
+    internet_counts = dict(
+        db.session.query(SurveyResponse.internet_quality, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.internet_quality).all()
+    )
+    platform_counts = dict(
+        db.session.query(SurveyResponse.platform_ease, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.platform_ease).all()
+    )
+    interaction_counts = dict(
+        db.session.query(SurveyResponse.teacher_interaction, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.teacher_interaction).all()
+    )
+    preference_counts = dict(
+        db.session.query(SurveyResponse.study_preference, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.study_preference).all()
+    )
+    continue_counts = dict(
+        db.session.query(SurveyResponse.continue_elearning, func.count(SurveyResponse.id))
+        .group_by(SurveyResponse.continue_elearning).all()
+    )
 
-    satisfaction_counts = dict(db.session.query(SurveyResponse.satisfaction, func.count(SurveyResponse.id)).group_by(SurveyResponse.satisfaction).all())
-    continue_counts = dict(db.session.query(SurveyResponse.continue_elearning, func.count(SurveyResponse.id)).group_by(SurveyResponse.continue_elearning).all())
+    # Last 7 days trend (Baghdad date)
+    # We use SQLite date() + timezone shift for better matching
+    baghdad_day = func.date(func.datetime(SurveyResponse.created_at, "+3 hours"))
+    last_days = db.session.query(baghdad_day, func.count(SurveyResponse.id))\
+        .group_by(baghdad_day)\
+        .order_by(baghdad_day.desc())\
+        .limit(7).all()
 
-    latest = SurveyResponse.query.order_by(SurveyResponse.created_at.desc()).limit(8).all()
+    # reverse to show oldest->newest
+    last_days = list(reversed(last_days))
+    trend_labels = [d for d, _ in last_days]
+    trend_values = [c for _, c in last_days]
+
+    # Latest items
+    latest = SurveyResponse.query.order_by(SurveyResponse.created_at.desc()).limit(10).all()
+
+    # KPIs (simple “top” values)
+    def top3(d):
+        return sorted(d.items(), key=lambda x: x[1], reverse=True)[:3]
+
+    kpis = {
+        "top_device": top3(device_counts),
+        "top_stage": top3(stage_counts),
+        "top_preference": top3(preference_counts),
+        "top_satisfaction": top3(satisfaction_counts),
+    }
 
     return render_template(
         "admin_dashboard.html",
@@ -34,8 +94,17 @@ def dashboard():
         gender_counts=gender_counts,
         stage_counts=stage_counts,
         satisfaction_counts=satisfaction_counts,
+        understanding_counts=understanding_counts,
+        device_counts=device_counts,
+        internet_counts=internet_counts,
+        platform_counts=platform_counts,
+        interaction_counts=interaction_counts,
+        preference_counts=preference_counts,
         continue_counts=continue_counts,
-        latest=latest
+        trend_labels=trend_labels,
+        trend_values=trend_values,
+        latest=latest,
+        kpis=kpis,
     )
 
 def _parse_range(f, t):

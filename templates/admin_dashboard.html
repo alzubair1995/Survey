@@ -5,25 +5,59 @@
 <div class="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
   <div>
     <h2 class="text-2xl font-extrabold">
-      <i class="fa-solid fa-chart-line ml-2 text-indigo-600"></i> لوحة الأدمن
+      <i class="fa-solid fa-gauge-high ml-2 text-indigo-600"></i> لوحة الأدمن
     </h2>
-    <p class="text-sm text-slate-500">إحصائيات الاستبيان + تصدير Excel</p>
+    <p class="text-sm text-slate-500">إحصائيات متقدمة + جارتات + تصدير Excel</p>
   </div>
 
   <div class="flex gap-2">
-    <a href="{{ url_for('auth.logout') }}" class="px-4 py-2 rounded-2xl bg-red-600 text-white hover:bg-red-700 transition shadow">
+    <a href="{{ url_for('auth.logout') }}"
+       class="px-4 py-2 rounded-2xl bg-red-600 text-white hover:bg-red-700 transition shadow">
       <i class="fa-solid fa-right-from-bracket ml-1"></i> خروج
     </a>
   </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<!-- KPIs -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
   <div class="glass border border-white/70 rounded-3xl p-4 shadow">
     <div class="text-slate-500 text-sm">إجمالي المشاركات</div>
     <div class="text-3xl font-extrabold mt-1">{{ total }}</div>
+    <div class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-wave-square ml-1"></i> مؤشر عام</div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-4 shadow">
+    <div class="text-slate-500 text-sm">أكثر جهاز استخدامًا</div>
+    <div class="text-lg font-extrabold mt-1">
+      {% if kpis.top_device and kpis.top_device[0] %} {{ kpis.top_device[0][0] }} {% else %} — {% endif %}
+    </div>
+    <div class="text-xs text-slate-500 mt-2">
+      {% if kpis.top_device and kpis.top_device[0] %} {{ kpis.top_device[0][1] }} مشاركة {% endif %}
+    </div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-4 shadow">
+    <div class="text-slate-500 text-sm">أكثر مرحلة مشاركة</div>
+    <div class="text-lg font-extrabold mt-1">
+      {% if kpis.top_stage and kpis.top_stage[0] %} {{ kpis.top_stage[0][0] }} {% else %} — {% endif %}
+    </div>
+    <div class="text-xs text-slate-500 mt-2">
+      {% if kpis.top_stage and kpis.top_stage[0] %} {{ kpis.top_stage[0][1] }} مشاركة {% endif %}
+    </div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-4 shadow">
+    <div class="text-slate-500 text-sm">تفضيل الدراسة الأعلى</div>
+    <div class="text-lg font-extrabold mt-1">
+      {% if kpis.top_preference and kpis.top_preference[0] %} {{ kpis.top_preference[0][0] }} {% else %} — {% endif %}
+    </div>
+    <div class="text-xs text-slate-500 mt-2">
+      {% if kpis.top_preference and kpis.top_preference[0] %} {{ kpis.top_preference[0][1] }} مشاركة {% endif %}
+    </div>
   </div>
 </div>
 
+<!-- Export -->
 <div class="glass border border-white/70 rounded-3xl p-5 shadow mb-6">
   <div class="font-extrabold mb-3">
     <i class="fa-solid fa-file-excel ml-2 text-emerald-600"></i> تصدير Excel بين تاريخين
@@ -37,43 +71,79 @@
   </form>
 </div>
 
+<!-- Trend -->
+<div class="glass border border-white/70 rounded-3xl p-5 shadow mb-6">
+  <div class="font-extrabold mb-3">
+    <i class="fa-solid fa-chart-line ml-2 text-indigo-600"></i> عدد المشاركات (آخر 7 أيام)
+  </div>
+  <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
+    <canvas id="trendChart" height="120"></canvas>
+  </div>
+</div>
+
+<!-- Charts grid -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
   <div class="glass border border-white/70 rounded-3xl p-5 shadow">
     <div class="font-extrabold mb-3"><i class="fa-solid fa-chart-pie ml-2 text-indigo-600"></i> الجنس</div>
-    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
-      <canvas id="genderChart" height="140"></canvas>
-    </div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="genderChart" height="140"></canvas></div>
   </div>
 
   <div class="glass border border-white/70 rounded-3xl p-5 shadow">
     <div class="font-extrabold mb-3"><i class="fa-solid fa-chart-column ml-2 text-blue-700"></i> المرحلة الدراسية</div>
-    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
-      <canvas id="stageChart" height="140"></canvas>
-    </div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="stageChart" height="140"></canvas></div>
   </div>
 
   <div class="glass border border-white/70 rounded-3xl p-5 shadow">
     <div class="font-extrabold mb-3"><i class="fa-solid fa-face-smile ml-2 text-emerald-700"></i> الرضا عن التعلم الإلكتروني</div>
-    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
-      <canvas id="satChart" height="160"></canvas>
-    </div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="satChart" height="160"></canvas></div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-brain ml-2 text-slate-700"></i> هل يساعد على فهم المادة؟</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="underChart" height="160"></canvas></div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-mobile-screen-button ml-2 text-indigo-600"></i> الجهاز المستخدم</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="deviceChart" height="160"></canvas></div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-wifi ml-2 text-blue-700"></i> جودة الإنترنت</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="internetChart" height="160"></canvas></div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-graduation-cap ml-2 text-emerald-700"></i> سهولة المنصة</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="platformChart" height="160"></canvas></div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-chalkboard-user ml-2 text-slate-700"></i> التفاعل مع المدرس</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="interactionChart" height="160"></canvas></div>
+  </div>
+
+  <div class="glass border border-white/70 rounded-3xl p-5 shadow">
+    <div class="font-extrabold mb-3"><i class="fa-solid fa-people-arrows ml-2 text-indigo-600"></i> تفضيل طريقة الدراسة</div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="prefChart" height="160"></canvas></div>
   </div>
 
   <div class="glass border border-white/70 rounded-3xl p-5 shadow">
     <div class="font-extrabold mb-3"><i class="fa-solid fa-rotate ml-2 text-slate-700"></i> الاستمرار بالتعلم الإلكتروني</div>
-    <div class="bg-white/60 border border-white/70 rounded-2xl p-3">
-      <canvas id="contChart" height="160"></canvas>
-    </div>
+    <div class="bg-white/60 border border-white/70 rounded-2xl p-3"><canvas id="contChart" height="160"></canvas></div>
   </div>
 </div>
 
+<!-- Latest -->
 <div class="glass border border-white/70 rounded-3xl p-5 shadow">
   <div class="font-extrabold mb-3"><i class="fa-solid fa-clock-rotate-left ml-2"></i> آخر المشاركات</div>
   <div class="space-y-2">
     {% for r in latest %}
       <div class="bg-white/70 border border-white/70 rounded-2xl p-3">
-<div class="font-extrabold">#{{ r.id }} • مشاركة جديدة</div>
-        <div class="text-sm text-slate-600">الجنس: {{ r.gender }} | المرحلة: {{ r.education_stage }}</div>
+        <div class="font-extrabold">#{{ r.id }} • مشاركة جديدة</div>
+        <div class="text-sm text-slate-600">
+          الجنس: {{ r.gender }} | المرحلة: {{ r.education_stage }} | التفضيل: {{ r.study_preference }}
+        </div>
         <div class="text-xs text-slate-500">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
       </div>
     {% endfor %}
@@ -86,27 +156,50 @@
 
 {% block scripts %}
 <script>
-  function chartFromDict(canvasId, dictObj, type="pie") {
+  function safeDict(d){ return d && Object.keys(d).length ? d : {"لا توجد بيانات": 0}; }
+
+  function chartFromDict(canvasId, dictObj, type="bar", legend=true) {
+    dictObj = safeDict(dictObj);
     const labels = Object.keys(dictObj);
     const values = Object.values(dictObj);
+
     const ctx = document.getElementById(canvasId);
     new Chart(ctx, {
       type,
-      data: {
-        labels: labels.length ? labels : ["لا توجد بيانات"],
-        datasets: [{ data: values.length ? values : [0] }]
-      },
+      data: { labels, datasets: [{ data: values }] },
       options: {
         responsive: true,
-        plugins: { legend: { position: "bottom" } },
-        scales: type === "bar" ? { y: { beginAtZero: true } } : {}
+        plugins: { legend: { display: legend, position: "bottom" } },
+        scales: (type === "bar" || type === "line") ? { y: { beginAtZero: true } } : {}
       }
     });
   }
 
+  // Trend (last 7 days)
+  new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+      labels: {{ trend_labels|tojson }},
+      datasets: [{ data: {{ trend_values|tojson }} }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
   chartFromDict("genderChart", {{ gender_counts|tojson }}, "pie");
-  chartFromDict("stageChart", {{ stage_counts|tojson }}, "bar");
-  chartFromDict("satChart", {{ satisfaction_counts|tojson }}, "bar");
-  chartFromDict("contChart", {{ continue_counts|tojson }}, "pie");
+  chartFromDict("stageChart", {{ stage_counts|tojson }}, "bar", false);
+  chartFromDict("satChart", {{ satisfaction_counts|tojson }}, "bar", false);
+  chartFromDict("underChart", {{ understanding_counts|tojson }}, "bar", false);
+
+  chartFromDict("deviceChart", {{ device_counts|tojson }}, "bar", false);
+  chartFromDict("internetChart", {{ internet_counts|tojson }}, "bar", false);
+  chartFromDict("platformChart", {{ platform_counts|tojson }}, "bar", false);
+  chartFromDict("interactionChart", {{ interaction_counts|tojson }}, "bar", false);
+
+  chartFromDict("prefChart", {{ preference_counts|tojson }}, "pie");
+  chartFromDict("contChart", {{ continue_counts|tojson }}, "doughnut");
 </script>
 {% endblock %}
