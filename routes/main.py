@@ -29,3 +29,8 @@ def survey():
 @main_bp.route("/about")
 def about():
     return render_template("about.html")
+
+
+@main_bp.route("/health")
+def health():
+    return "OK", 200
