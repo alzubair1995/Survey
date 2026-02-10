@@ -76,6 +76,51 @@
 
   </form>
 </div>
+<div class="glass border border-white/70 rounded-3xl p-5 shadow mb-6">
+  <div class="font-extrabold mb-3">
+    <i class="fa-solid fa-database ml-2 text-indigo-600"></i> النسخ الاحتياطي والاستعادة
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Download Backup -->
+    <div class="bg-white/70 border border-white/70 rounded-2xl p-4">
+      <div class="font-extrabold mb-2">
+        <i class="fa-solid fa-download ml-2 text-emerald-600"></i> تنزيل نسخة احتياطية
+      </div>
+      <p class="text-sm text-slate-600 mb-3">
+        يقوم النظام بإنشاء نسخة من قاعدة البيانات وتنزيلها مباشرة.
+      </p>
+      <a href="{{ url_for('admin.download_backup') }}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 transition shadow font-bold w-full justify-center">
+        <i class="fa-solid fa-file-arrow-down"></i>
+        تنزيل Backup (.db)
+      </a>
+    </div>
+
+    <!-- Restore Backup -->
+    <div class="bg-white/70 border border-white/70 rounded-2xl p-4">
+      <div class="font-extrabold mb-2">
+        <i class="fa-solid fa-upload ml-2 text-blue-700"></i> استعادة نسخة احتياطية
+      </div>
+      <p class="text-sm text-slate-600 mb-3">
+        اختر ملف <b>.db</b> لاستعادة البيانات (سيتم حفظ نسخة أمان تلقائيًا قبل الاستبدال).
+      </p>
+
+      <form method="POST" action="{{ url_for('admin.restore_backup') }}" enctype="multipart/form-data"
+            class="flex flex-col sm:flex-row gap-2 items-center">
+        <input type="file" name="backup_file" accept=".db" required
+               class="border border-slate-200 bg-white/70 p-2 rounded-2xl w-full">
+        <button class="px-4 py-2 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition shadow font-bold w-full sm:w-auto">
+          <i class="fa-solid fa-rotate ml-1"></i> استعادة
+        </button>
+      </form>
+
+      <div class="text-xs text-slate-500 mt-3">
+        ⚠️ بعد الاستعادة يُفضّل تحديث الصفحة، وعلى الاستضافة قد تحتاج Restart.
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Trend -->
 <div class="glass border border-white/70 rounded-3xl p-5 shadow mb-6">

@@ -30,6 +30,12 @@ from bidi.algorithm import get_display
 from flask import redirect, url_for
 
 
+import os
+from pathlib import Path
+from datetime import datetime
+
+from flask import current_app, send_file, request, redirect, url_for, flash
+from werkzeug.utils import secure_filename
 
 
 
@@ -358,3 +364,85 @@ def export_pdf():
         download_name=filename,
         mimetype="application/pdf"
     )
+def _get_sqlite_db_path() -> Path:
+    """
+    Extracts sqlite DB file path from SQLALCHEMY_DATABASE_URI
+    Example: sqlite:////opt/render/project/src/database/app.db
+    """
+    uri = current_app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if not uri.startswith("sqlite:///"):
+        raise RuntimeError("Backup/Restore supported only for SQLite in this project.")
+    # uri after sqlite:/// is a filesystem path
+    path_str = uri.replace("sqlite:///", "", 1)
+    return Path(path_str)
+
+def _ensure_backups_dir() -> Path:
+    d = Path(current_app.root_path) / "backups"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+@admin_bp.route("/backup/download")
+@login_required
+@roles_required("admin")
+def download_backup():
+    db_path = _get_sqlite_db_path()
+    if not db_path.exists():
+        flash("قاعدة البيانات غير موجودة!", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    backups_dir = _ensure_backups_dir()
+    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    backup_name = f"backup_{ts}.db"
+    backup_path = backups_dir / backup_name
+
+    # افصل السيشن للتأكد
+    db.session.remove()
+
+    # نسخ الملف (copy bytes)
+    backup_path.write_bytes(db_path.read_bytes())
+
+    return send_file(
+        backup_path,
+        as_attachment=True,
+        download_name=backup_name,
+        mimetype="application/octet-stream"
+    )
+@admin_bp.route("/backup/restore", methods=["POST"])
+@login_required
+@roles_required("admin")
+def restore_backup():
+    file = request.files.get("backup_file")
+    if not file or file.filename.strip() == "":
+        flash("رجاءً اختر ملف النسخة الاحتياطية.", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    filename = secure_filename(file.filename)
+    if not filename.lower().endswith(".db"):
+        flash("الملف يجب أن يكون بصيغة .db", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    db_path = _get_sqlite_db_path()
+    backups_dir = _ensure_backups_dir()
+
+    # احفظ النسخة المرفوعة أولاً داخل backups
+    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    uploaded_path = backups_dir / f"uploaded_{ts}_{filename}"
+    file.save(uploaded_path)
+
+    # حاول تفريغ/إغلاق الاتصالات قبل الاستبدال
+    try:
+        db.session.remove()
+        db.engine.dispose()
+    except Exception:
+        pass
+
+    # احتفظ بنسخة أمان من DB الحالية قبل الاستبدال
+    if db_path.exists():
+        safety_copy = backups_dir / f"before_restore_{ts}.db"
+        safety_copy.write_bytes(db_path.read_bytes())
+
+    # استبدال DB الحالية بالملف المرفوع
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db_path.write_bytes(uploaded_path.read_bytes())
+
+    flash("✅ تمت استعادة النسخة الاحتياطية بنجاح. يُفضّل إعادة تشغيل الخدمة إن كنت على استضافة.", "success")
+    return redirect(url_for("admin.dashboard"))
